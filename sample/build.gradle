@@ -1,0 +1,54 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
+
+android {
+    namespace 'io.hebbank.demo'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'io.hebbank.demo'
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName '1.0.0'
+
+        // Wire the bank backend's URL + the demo's hbs_live_ key at
+        // build time. Override on the Gradle command line:
+        //   ./gradlew :sample:assembleDebug \
+        //     -PbankBaseUrl="http://10.0.2.2:8080" \
+        //     -PdemoApiKey="hbs_live_…"
+        buildConfigField "String", "BANK_BASE_URL", "\"${project.findProperty('bankBaseUrl') ?: 'http://10.0.2.2:8080'}\""
+        buildConfigField "String", "DEMO_API_KEY",  "\"${project.findProperty('demoApiKey') ?: ''}\""
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+
+    buildFeatures {
+        viewBinding true
+        buildConfig true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions { jvmTarget = '17' }
+}
+
+dependencies {
+    implementation project(':verifai')
+
+    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.activity:activity-ktx:1.8.2'
+
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
+}

@@ -11,17 +11,30 @@ import java.net.URL
  */
 internal object ApiClient {
     
-    private const val BASE_URL = "https://us-central1-gen-lang-client-0072619475.cloudfunctions.net"
+    // v3.0.0 — VerifAI lives inside the unified 2stars platform. The
+    // legacy Cloud Functions backend is deprecated; all calls go to the
+    // platform's per-product routing scheme:
+    //   https://api.2stars.io/verifai/v1/...
+    //
+    // The same `hbs_live_` key that authenticates against /video/v1/*
+    // (the Video AI surface) authenticates here too.
+    //
+    // Override at runtime via `VerifAI.Options(baseUrl = "...")` when
+    // running against staging, a local docker stack, or a self-hosted
+    // deployment that hasn't migrated to the per-product paths yet.
+    private const val DEFAULT_BASE_URL = "https://api.2stars.io/verifai/v1"
+
+    private fun baseUrl(config: VerifAI.Config): String = config.options.baseUrl ?: DEFAULT_BASE_URL
     
     suspend fun registerToken(config: VerifAI.Config, userId: String, fcmToken: String): Boolean = withContext(Dispatchers.IO) {
         try {
-            val deviceIdHash = SignalCollector.getDeviceIdHash().take(16)
+            val deviceIdHash = SignalCollector.getDeviceIdHash()
             val body = JSONObject().apply {
                 put("userId", userId)
                 put("fcmToken", fcmToken)
                 put("deviceId", deviceIdHash)
             }
-            
+
             val response = post(config, "/registerToken", body)
             response.optBoolean("success", false)
         } catch (e: Exception) {
@@ -122,50 +135,71 @@ internal object ApiClient {
     
     // ==================== HTTP Helpers ====================
     
+    /**
+     * Thrown when the server reports the requested feature is disabled
+     * for this API key (HTTP 403 with code=feature_disabled). Surfaced
+     * to callers as Status.FEATURE_DISABLED so the app can show a clean
+     * "your account doesn't have VerifAI verification enabled — contact
+     * support" path instead of a generic ERROR.
+     */
+    class FeatureDisabledException(val featureName: String, message: String) : RuntimeException(message)
+
     internal fun get(config: VerifAI.Config, endpoint: String): JSONObject {
-        val url = URL("$BASE_URL$endpoint")
-        val conn = url.openConnection() as HttpURLConnection
-        
-        conn.requestMethod = "GET"
-        conn.setRequestProperty("Authorization", "Bearer ${config.apiKey}")
-        conn.setRequestProperty("Content-Type", "application/json")
-        conn.connectTimeout = config.options.timeoutSeconds * 1000
-        conn.readTimeout = config.options.timeoutSeconds * 1000
-        
-        val response = conn.inputStream.bufferedReader().readText()
-        return JSONObject(response)
+        return execute(config, endpoint, "GET", null)
     }
-    
+
     internal fun post(config: VerifAI.Config, endpoint: String, body: JSONObject): JSONObject {
-        val url = URL("$BASE_URL$endpoint")
-        val conn = url.openConnection() as HttpURLConnection
-        
-        conn.requestMethod = "POST"
-        conn.setRequestProperty("Authorization", "Bearer ${config.apiKey}")
-        conn.setRequestProperty("Content-Type", "application/json")
-        conn.connectTimeout = config.options.timeoutSeconds * 1000
-        conn.readTimeout = config.options.timeoutSeconds * 1000
-        conn.doOutput = true
-        
-        conn.outputStream.bufferedWriter().use { it.write(body.toString()) }
-        
-        val response = conn.inputStream.bufferedReader().readText()
-        return JSONObject(response)
+        return execute(config, endpoint, "POST", body)
     }
-    
+
     internal fun delete(config: VerifAI.Config, endpoint: String): JSONObject {
-        val url = URL("$BASE_URL$endpoint")
+        return execute(config, endpoint, "DELETE", null)
+    }
+
+    /**
+     * Single execute path so Authorization, timeouts, and error handling
+     * stay consistent across verbs. Throws [FeatureDisabledException]
+     * when the server returns 403 with code=feature_disabled.
+     */
+    private fun execute(config: VerifAI.Config, endpoint: String, method: String, body: JSONObject?): JSONObject {
+        val url = URL("${baseUrl(config)}$endpoint")
         val conn = url.openConnection() as HttpURLConnection
-        
-        conn.requestMethod = "DELETE"
+
+        conn.requestMethod = method
         conn.setRequestProperty("Authorization", "Bearer ${config.apiKey}")
         conn.setRequestProperty("Content-Type", "application/json")
+        conn.setRequestProperty("Accept", "application/json")
+        conn.setRequestProperty("User-Agent", "VerifAI-Android/${VerifAI.SDK_VERSION}")
         conn.connectTimeout = config.options.timeoutSeconds * 1000
         conn.readTimeout = config.options.timeoutSeconds * 1000
-        
-        val response = conn.inputStream.bufferedReader().readText()
-        return JSONObject(response)
+
+        if (body != null) {
+            conn.doOutput = true
+            conn.outputStream.bufferedWriter().use { it.write(body.toString()) }
+        }
+
+        val code = conn.responseCode
+        val stream = if (code in 200..299) conn.inputStream else conn.errorStream
+        val text = stream?.bufferedReader()?.readText() ?: ""
+
+        if (code in 200..299) {
+            return JSONObject(text.ifBlank { "{}" })
+        }
+        // Translate the structured 403 into a typed exception. The 2stars
+        // server returns { "error": { "code": "feature_disabled", "message": "..." } }.
+        if (code == 403) {
+            try {
+                val err = JSONObject(text).optJSONObject("error")
+                if (err != null && err.optString("code") == "feature_disabled") {
+                    throw FeatureDisabledException(
+                        endpoint.removePrefix("/"),
+                        err.optString("message", "Feature disabled"),
+                    )
+                }
+            } catch (_: org.json.JSONException) { /* fall through */ }
+        }
+        throw RuntimeException("VerifAI HTTP $code: ${text.take(200)}")
     }
-    
+
     private fun String.encodeUrl(): String = java.net.URLEncoder.encode(this, "UTF-8")
 }

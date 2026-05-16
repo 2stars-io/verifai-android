@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/navy"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:gravity="center_vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:layout_marginBottom="24dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Heb" android:textColor="@color/white" android:textSize="28sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="bank" android:textColor="@color/emerald_soft" android:textSize="28sp" android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:background="@color/white" android:padding="24dp">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Open an account" android:textColor="@color/navy" android:textSize="24sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="30 seconds. No paperwork. $1,000 starter balance."
+                android:textColor="@color/muted" android:textSize="14sp"
+                android:layout_marginTop="4dp" android:layout_marginBottom="12dp" />
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="First name" android:textColor="@color/ink" android:textSize="13sp"
+                android:layout_marginTop="8dp" android:layout_marginBottom="6dp" />
+            <EditText android:id="@+id/firstName"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:inputType="textPersonName" android:padding="12dp" />
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Last name" android:textColor="@color/ink" android:textSize="13sp"
+                android:layout_marginTop="12dp" android:layout_marginBottom="6dp" />
+            <EditText android:id="@+id/lastName"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:inputType="textPersonName" android:padding="12dp" />
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Username" android:textColor="@color/ink" android:textSize="13sp"
+                android:layout_marginTop="12dp" android:layout_marginBottom="6dp" />
+            <EditText android:id="@+id/username"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:inputType="text" android:hint="@string/hint_username" android:padding="12dp" />
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Password" android:textColor="@color/ink" android:textSize="13sp"
+                android:layout_marginTop="12dp" android:layout_marginBottom="6dp" />
+            <EditText android:id="@+id/password"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:inputType="textPassword" android:padding="12dp" />
+
+            <Button android:id="@+id/openAccount"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Open my account"
+                android:layout_marginTop="20dp"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:backgroundTint="@color/navy" />
+
+            <TextView android:id="@+id/errorBox"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:visibility="gone"
+                android:padding="10dp" android:layout_marginTop="12dp"
+                android:background="@drawable/bg_alert_bad"
+                android:textColor="#991B1B" android:textSize="13sp" />
+
+            <TextView android:id="@+id/toLogin"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="20dp" android:gravity="center"
+                android:text="Already have an account? Sign in"
+                android:textColor="@color/emerald_2" android:textSize="13sp" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

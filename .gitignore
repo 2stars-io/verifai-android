@@ -1,0 +1,44 @@
+# ── Build artifacts ────────────────────────────────────────────────
+.gradle/
+build/
+*/build/
+**/build/
+gradle-app.setting
+!gradle-wrapper.jar
+
+# ── Local-only IDE state ──────────────────────────────────────────
+.idea/
+*.iml
+.vscode/
+*.swp
+.kotlin/
+
+# ── Local Android SDK path (machine-specific) ─────────────────────
+local.properties
+
+# ── Secrets / credentials (must never ship to GitHub) ─────────────
+*.keystore
+*.jks
+*.p8
+*.pem
+**/google-services.json
+**/google-services-*.json
+**/secrets.properties
+**/keystore.properties
+.env
+.env.*
+
+# ── OS ─────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Tooling ────────────────────────────────────────────────────────
+captures/
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/
+fastlane/test_output
+
+# ── Editor backup ─────────────────────────────────────────────────
+*~
+*.bak

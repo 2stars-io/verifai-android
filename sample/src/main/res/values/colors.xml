@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="navy">#0A1F44</color>
+    <color name="navy_2">#122D62</color>
+    <color name="emerald">#047857</color>
+    <color name="emerald_2">#059669</color>
+    <color name="emerald_soft">#D1FAE5</color>
+    <color name="bg">#F5F7FB</color>
+    <color name="card">#FFFFFF</color>
+    <color name="border">#E2E8F0</color>
+    <color name="ink">#0F1B34</color>
+    <color name="muted">#64748B</color>
+    <color name="danger">#DC2626</color>
+    <color name="danger_bg">#FEE2E2</color>
+    <color name="warn">#B45309</color>
+    <color name="warn_bg">#FEF3C7</color>
+    <color name="white">#FFFFFF</color>
+</resources>

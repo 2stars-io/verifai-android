@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Top bar -->
+        <LinearLayout
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:background="@color/navy" android:padding="16dp"
+            android:orientation="horizontal" android:gravity="center_vertical">
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:orientation="horizontal" android:gravity="center_vertical">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Heb" android:textColor="@color/white" android:textSize="20sp" android:textStyle="bold" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="bank" android:textColor="@color/emerald_soft" android:textSize="20sp" android:textStyle="bold" />
+                <TextView android:id="@+id/who"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:text="@username" android:textColor="#A7F3D0" android:textSize="13sp" />
+            </LinearLayout>
+            <Button android:id="@+id/signOut"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Sign out" android:textAllCaps="false"
+                android:textSize="12sp" android:textColor="@color/white"
+                android:backgroundTint="#1F3A6B" />
+        </LinearLayout>
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:padding="20dp">
+
+            <TextView android:id="@+id/greeting"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Welcome"
+                android:textColor="@color/navy" android:textSize="20sp" android:textStyle="bold"
+                android:layout_marginBottom="16dp" />
+
+            <!-- VerifAI status banner -->
+            <LinearLayout
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:background="@drawable/bg_alert_ok"
+                android:padding="14dp" android:orientation="vertical"
+                android:layout_marginBottom="16dp">
+                <TextView android:id="@+id/vfTitle"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Trusted device" android:textColor="@color/emerald" android:textSize="14sp" android:textStyle="bold" />
+                <TextView android:id="@+id/vfMeta"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="" android:textColor="@color/emerald" android:textSize="12sp"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+
+            <!-- Balance card -->
+            <LinearLayout
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:background="@drawable/bg_balance" android:padding="24dp"
+                android:orientation="vertical" android:layout_marginBottom="16dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="AVAILABLE BALANCE" android:textColor="#9DB2D8" android:textSize="11sp"
+                    android:letterSpacing="0.08" />
+                <TextView android:id="@+id/balance"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="$—" android:textColor="@color/white"
+                    android:textSize="40sp" android:textStyle="bold"
+                    android:layout_marginTop="6dp" />
+                <TextView android:id="@+id/acct"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="···· ···· ···· ····"
+                    android:textColor="#7E94BE" android:textSize="13sp" android:fontFamily="monospace"
+                    android:layout_marginTop="6dp" />
+            </LinearLayout>
+
+            <!-- Send money card -->
+            <LinearLayout
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:background="@drawable/bg_card" android:padding="20dp"
+                android:orientation="vertical" android:layout_marginBottom="16dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Send money" android:textColor="@color/navy"
+                    android:textSize="16sp" android:textStyle="bold" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Transfer to another Hebbank user."
+                    android:textColor="@color/muted" android:textSize="13sp" android:layout_marginTop="4dp" />
+
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="To username" android:textColor="@color/ink" android:textSize="13sp"
+                    android:layout_marginTop="12dp" android:layout_marginBottom="6dp" />
+                <EditText android:id="@+id/transferTo"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:hint="@friend" android:padding="10dp" android:inputType="text" />
+
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Amount (USD)" android:textColor="@color/ink" android:textSize="13sp"
+                    android:layout_marginTop="12dp" android:layout_marginBottom="6dp" />
+                <EditText android:id="@+id/transferAmount"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:hint="50.00" android:padding="10dp" android:inputType="numberDecimal" />
+
+                <Button android:id="@+id/send"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Send" android:textAllCaps="false"
+                    android:textColor="@color/white" android:backgroundTint="@color/emerald_2"
+                    android:layout_marginTop="12dp" />
+                <TextView android:id="@+id/transferStatus"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:visibility="gone"
+                    android:padding="8dp" android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_alert_ok"
+                    android:textColor="@color/emerald" android:textSize="12sp" />
+            </LinearLayout>
+
+            <!-- Devices card -->
+            <LinearLayout
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:background="@drawable/bg_card" android:padding="20dp"
+                android:orientation="vertical">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Your trusted devices" android:textColor="@color/navy"
+                    android:textSize="16sp" android:textStyle="bold" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Devices you've signed in from. Powered by VerifAI."
+                    android:textColor="@color/muted" android:textSize="13sp"
+                    android:layout_marginTop="4dp" android:layout_marginBottom="8dp" />
+                <LinearLayout android:id="@+id/devicesList"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

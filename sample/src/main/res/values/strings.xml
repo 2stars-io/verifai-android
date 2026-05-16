@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Hebbank</string>
+    <string name="hint_username">e.g. alice</string>
+</resources>
