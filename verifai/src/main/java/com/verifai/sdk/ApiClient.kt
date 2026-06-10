@@ -118,6 +118,28 @@ internal object ApiClient {
         }
     }
     
+    /**
+     * Fetch the current state of an approval session. Used by the
+     * new-device side to wait for a trusted device to approve.
+     * Returns null on transport / decode error so callers can poll-retry.
+     */
+    suspend fun getSession(config: VerifAI.Config, sessionId: String): VerifAI.SessionState? = withContext(Dispatchers.IO) {
+        try {
+            val response = get(config, "/getSession?sessionId=${sessionId.encodeUrl()}")
+            val status = response.optString("status", "")
+            if (status.isBlank()) return@withContext null
+            VerifAI.SessionState(
+                id              = response.optString("id", sessionId),
+                status          = status,
+                approvedBy      = response.optString("approvedBy", null),
+                rejectionReason = response.optString("rejectionReason", null),
+                expiresAt       = response.optLong("expiresAt", 0L),
+            )
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     suspend fun rejectDevice(config: VerifAI.Config, sessionId: String, type: VerifAI.DeviceType, reason: String): Boolean = withContext(Dispatchers.IO) {
         try {
             val body = JSONObject().apply {

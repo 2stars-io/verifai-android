@@ -22,14 +22,13 @@ internal object SignalCollector {
     
     fun init(context: Context) {
         appContext = context.applicationContext
-        
-        // Get or create device salt (stored forever)
-        val prefs = context.getSharedPreferences("verifai_internal", Context.MODE_PRIVATE)
-        deviceSalt = prefs.getString("device_salt", null)
-        if (deviceSalt == null) {
-            deviceSalt = UUID.randomUUID().toString()
-            prefs.edit().putString("device_salt", deviceSalt).apply()
-        }
+
+        // Per-device salt — Keystore-derived (survives `pm clear` on API 28+)
+        // with a legacy SharedPreferences fast-path for installs that
+        // pre-date this change, so existing devices don't get a fresh hash
+        // and trip the rescue flow needlessly. See DeviceSaltStore for the
+        // full rationale and fallback chain.
+        deviceSalt = DeviceSaltStore.get(context)
     }
     
     /**

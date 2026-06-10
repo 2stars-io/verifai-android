@@ -127,14 +127,57 @@ class LoginActivity : AppCompatActivity() {
                         proceed(if (isFirstMatch) 2500 else 900)
                     }
                     VerifAI.Status.NEW_DEVICE -> {
-                        // First time on this device — auto-register so the
-                        // user gets in. Subsequent logins on a brand-new
-                        // device that wasn't pre-approved would land here
-                        // too; for the demo, register-on-first-attempt is
-                        // the simplest UX.
-                        VerifAI.register(r.user.email)
-                        showVf("✓ First time on this device — registered with the bank", VfTone.OK)
-                        proceed(1200)
+                        // Two distinct cases, gated on whether the user already
+                        // has a trusted device on file:
+                        //   - existing.isEmpty(): first-ever login on the
+                        //     account, no one to approve against → auto-register
+                        //     so account bootstrap is possible.
+                        //   - existing.isNotEmpty() + verify.sessionId != null:
+                        //     wait for a trusted device to tap Approve. Polls
+                        //     /getSession every 2s for up to 25s. Mirrors the
+                        //     web's login.html flow.
+                        val existing = try { VerifAI.listDevices(r.user.email) } catch (_: Exception) { emptyList() }
+                        val sid = verify.sessionId
+                        when {
+                            existing.isEmpty() -> {
+                                VerifAI.register(r.user.email)
+                                showVf("✓ First device on this account — registered.", VfTone.OK)
+                                proceed(1200)
+                            }
+                            sid != null -> {
+                                showVf("⏳ Approve this sign-in on your trusted device (${existing.size} registered). Waiting up to 25s…", VfTone.PENDING)
+                                val result = VerifAI.pollSession(sid, intervalMs = 2000, deadlineMs = 25_000)
+                                when (result.status) {
+                                    "approved" -> {
+                                        // Approval landed — register THIS device
+                                        // so the next login from this phone
+                                        // returns TRUSTED without re-asking.
+                                        VerifAI.register(r.user.email)
+                                        val by = result.approvedBy?.let { " by $it" } ?: ""
+                                        showVf("✓ Approved$by. Redirecting…", VfTone.OK)
+                                        proceed(1200)
+                                    }
+                                    "rejected" -> {
+                                        BankApi.clearSession(this@LoginActivity)
+                                        val why = result.rejectionReason?.let { " — $it" } ?: ""
+                                        showVf("✗ The trusted device rejected this sign-in$why", VfTone.BAD)
+                                    }
+                                    else -> {
+                                        BankApi.clearSession(this@LoginActivity)
+                                        showVf("✗ No response from your trusted device within 25 seconds. Try again, or sign in from the trusted device first.", VfTone.BAD)
+                                    }
+                                }
+                            }
+                            else -> {
+                                // NEW_DEVICE without sessionId (older backend
+                                // or 0-trusted edge case the server short-
+                                // circuits). Fall back to auto-register so
+                                // the demo doesn't brick.
+                                VerifAI.register(r.user.email)
+                                showVf("⚠ Device registered without approval session — proceeding.", VfTone.OK)
+                                proceed(1200)
+                            }
+                        }
                     }
                     VerifAI.Status.REJECTED -> {
                         BankApi.clearSession(this@LoginActivity)

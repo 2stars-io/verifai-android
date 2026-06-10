@@ -200,9 +200,44 @@ object VerifAI {
     }
     
     /**
+     * Fetch the current state of an approval session. Returns null on
+     * transport error; the caller (typically [pollSession]) retries.
+     */
+    suspend fun getSession(sessionId: String): SessionState? {
+        checkInitialized()
+        return ApiClient.getSession(config, sessionId)
+    }
+
+    /**
+     * Wait for a NEW_DEVICE approval session to resolve. Polls
+     * [getSession] every [intervalMs] until status moves off "pending"
+     * or [deadlineMs] elapses. Returns the final session state, or a
+     * synthetic `status="timeout"` entry on deadline.
+     *
+     * Used on the new-device side immediately after [verify] returned
+     * NEW_DEVICE with a sessionId: the user's trusted device sees the
+     * approval modal (FCM push + polling fallback on web), taps Approve
+     * or Deny, and this resolves accordingly.
+     */
+    suspend fun pollSession(
+        sessionId: String,
+        intervalMs: Long = 2000L,
+        deadlineMs: Long = 25_000L,
+    ): SessionState {
+        checkInitialized()
+        val end = System.currentTimeMillis() + deadlineMs
+        while (System.currentTimeMillis() < end) {
+            val s = ApiClient.getSession(config, sessionId)
+            if (s != null && s.status != "pending") return s
+            kotlinx.coroutines.delay(intervalMs)
+        }
+        return SessionState(id = sessionId, status = "timeout")
+    }
+
+    /**
      * Check if this device is on the same network as a given IP.
      * Used for proximity verification.
-     * 
+     *
      * @param remoteIP The IP to compare against
      * @return true if on same network
      */
@@ -576,6 +611,22 @@ object VerifAI {
         MATCH,
         MISMATCH,
     }
+
+    /**
+     * Snapshot of an approval session as returned by [getSession] / [pollSession].
+     *
+     * @property status one of "pending", "approved", "rejected", "expired",
+     *                  or the synthetic "timeout" from [pollSession].
+     * @property approvedBy human label of who approved (only set when status="approved").
+     * @property rejectionReason reason text the approver supplied (only on "rejected").
+     */
+    data class SessionState(
+        val id:              String,
+        val status:          String,
+        val approvedBy:      String? = null,
+        val rejectionReason: String? = null,
+        val expiresAt:       Long    = 0L,
+    )
     
     data class TrustScore(
         val level: TrustLevel,
