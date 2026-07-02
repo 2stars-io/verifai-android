@@ -152,6 +152,47 @@ object VerifAI {
         checkInitialized()
         return ApiClient.deleteDevice(config, deviceId, type)
     }
+
+    /**
+     * SIM-swap OTP gate. Runs the full VerifAI scan (deviceIdHash +
+     * signals + behavioral) and answers whether the current device is
+     * the one enrolled for `userId`. Call this BEFORE dispatching any
+     * SMS/email OTP: if `allow == false`, the requesting phone isn't
+     * the enrolled one (right code, wrong phone — the SIM-swap case),
+     * so don't send.
+     *
+     * Stateless — no code is generated, no SMS is sent. Merchant keeps
+     * its own OTP provider. Blocked results fire the server-side
+     * `otp.blocked` webhook with the phone masked to last-4.
+     *
+     * @param userId       Same identifier used for register/verify
+     * @param phoneNumber  E.164 (e.g. "+447700900123") — echoed to
+     *                     the webhook on block, masked to last-4
+     */
+    suspend fun otpGate(userId: String, phoneNumber: String): OtpGateResult {
+        checkInitialized()
+        return DeviceManager.otpGate(config, userId, phoneNumber)
+    }
+
+    /**
+     * Reset every enrolled device + pending session for `userId`
+     * under this API key. Idempotent. Fires `verifai.reset` webhook
+     * on the server so support/audit pipelines catch the action.
+     */
+    suspend fun resetUser(userId: String): ResetResult {
+        checkInitialized()
+        return DeviceManager.resetUser(config, userId)
+    }
+
+    /**
+     * Surgical single-device reset. Use when the user has multiple
+     * enrolled devices and only one (a stolen phone, a lost tablet)
+     * needs to go.
+     */
+    suspend fun resetDevice(userId: String, deviceIdHash: String): ResetResult {
+        checkInitialized()
+        return DeviceManager.resetDevice(config, userId, deviceIdHash)
+    }
     
     /**
      * Handle incoming push notification for device approval.
@@ -648,6 +689,23 @@ object VerifAI {
         val type: DeviceType,
         val deviceInfo: String,
         val publicIP: String
+    )
+
+    /** Result of an OTP gate check. `allow=false` means block delivery. */
+    data class OtpGateResult(
+        val allow: Boolean,
+        val reason: String,
+        val trustScore: Int,
+        val trustLevel: TrustLevel,
+        val hint: String? = null
+    )
+
+    /** Result of a user or single-device reset. */
+    data class ResetResult(
+        val ok: Boolean,
+        val devicesDeleted: Int,
+        val sessionsDeleted: Int,
+        val error: String? = null
     )
     
     internal data class Config(

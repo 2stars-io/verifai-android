@@ -396,4 +396,88 @@ internal object DeviceManager {
         }
         return out
     }
+
+    /**
+     * SIM-swap OTP gate. Runs the 5-phase VerifAI scan (enrollment
+     * baseline → device fingerprint match → signal drift → behavioral
+     * quorum → integrity regression) BEFORE the caller fires an SMS
+     * OTP. Returns allow: false when this device isn't the one
+     * enrolled for `userId` — the wrong-device-right-code case that
+     * SIM-swap fraud relies on.
+     *
+     * Stateless — no code is generated, no SMS is sent. The caller
+     * keeps its own OTP provider; this is the yes/no signal to consult
+     * before dispatching.
+     */
+    suspend fun otpGate(config: VerifAI.Config, userId: String, phoneNumber: String): VerifAI.OtpGateResult = withContext(Dispatchers.IO) {
+        try {
+            val collected = SignalCollector.collect(CLOUD_PROJECT_NUMBER)
+            val deviceIdHash = SignalCollector.getDeviceIdHash()
+            val behavioralHashes = BehavioralCollector.getBehavioralHashes()
+            val body = JSONObject().apply {
+                put("userId", userId)
+                put("phoneNumber", phoneNumber)
+                put("deviceIdHash", deviceIdHash)
+                put("deviceType", "android")
+                put("signalHashes", JSONObject(collected.hashes))
+                if (behavioralHashes.isNotEmpty()) {
+                    put("behavioralHashes", JSONObject(behavioralHashes))
+                }
+            }
+            val response = ApiClient.post(config, "/otp/gate", body)
+            VerifAI.OtpGateResult(
+                allow      = response.optBoolean("allow", false),
+                reason     = response.optString("reason", "gate_error"),
+                trustScore = response.optInt("trustScore", 0),
+                trustLevel = when (response.optString("trustLevel", "unknown")) {
+                    "high"   -> VerifAI.TrustLevel.HIGH
+                    "medium" -> VerifAI.TrustLevel.MEDIUM
+                    "low"    -> VerifAI.TrustLevel.BASELINE
+                    else     -> VerifAI.TrustLevel.BASELINE
+                },
+                hint = response.optString("hint", null),
+            )
+        } catch (e: ApiClient.FeatureDisabledException) {
+            VerifAI.OtpGateResult(allow = false, reason = "feature_disabled", trustScore = 0, trustLevel = VerifAI.TrustLevel.BASELINE, hint = e.message)
+        } catch (e: Exception) {
+            VerifAI.OtpGateResult(allow = false, reason = "gate_error", trustScore = 0, trustLevel = VerifAI.TrustLevel.BASELINE, hint = e.message)
+        }
+    }
+
+    /**
+     * Reset every enrolled device + pending session for `userId`
+     * under this API key. Use for support/fraud workflows (user lost
+     * their phone, reported fraud, replaced their device).
+     */
+    suspend fun resetUser(config: VerifAI.Config, userId: String): VerifAI.ResetResult = withContext(Dispatchers.IO) {
+        try {
+            val body = JSONObject().apply { put("userId", userId) }
+            val response = ApiClient.post(config, "/reset", body)
+            VerifAI.ResetResult(
+                ok = response.optBoolean("ok", false),
+                devicesDeleted = response.optInt("devicesDeleted", 0),
+                sessionsDeleted = response.optInt("sessionsDeleted", 0),
+            )
+        } catch (e: Exception) {
+            VerifAI.ResetResult(ok = false, devicesDeleted = 0, sessionsDeleted = 0, error = e.message)
+        }
+    }
+
+    /** Surgical single-device reset by deviceIdHash. */
+    suspend fun resetDevice(config: VerifAI.Config, userId: String, deviceIdHash: String): VerifAI.ResetResult = withContext(Dispatchers.IO) {
+        try {
+            val body = JSONObject().apply {
+                put("userId", userId)
+                put("deviceIdHash", deviceIdHash)
+            }
+            val response = ApiClient.post(config, "/resetDevice", body)
+            VerifAI.ResetResult(
+                ok = response.optBoolean("ok", false),
+                devicesDeleted = response.optInt("devicesDeleted", 0),
+                sessionsDeleted = 0,
+            )
+        } catch (e: Exception) {
+            VerifAI.ResetResult(ok = false, devicesDeleted = 0, sessionsDeleted = 0, error = e.message)
+        }
+    }
 }
